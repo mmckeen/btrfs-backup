@@ -6,6 +6,7 @@ import (
 	"log"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // A library responsible for abstracting out the various btrfs-tools commands
@@ -66,6 +67,53 @@ func (d *Btrfs) Subvolumes(config Config) ([]string, error) {
 	return subvols, nil
 }
 
-func (d *Btrfs) Snapshot(config Config) (string, error) {
-	return "", nil
+func (d *Btrfs) Snapshot(config Config, srcSnapshot string) (string, error) {
+
+	snapshot_dir := config.Subvolume() + "/" + config.SubvolumeDirectory()
+
+	t := time.Now()
+
+	timestamp := t.Format("20060102150405")
+
+	snapshot := snapshot_dir + "/btrfs_backup_" + timestamp
+
+	log.Printf("Making sure of the source directory: %s", srcSnapshot)
+
+	var stderr bytes.Buffer
+	cmd := exec.Command("btrfs", "subvolume", "show", srcSnapshot)
+	cmd.Stderr = &stderr
+
+	if err := cmd.Start(); err != nil {
+		return "", err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		err = fmt.Errorf("Error checking for a valid subvolume: %s\nStderr: %s",
+			err, stderr.String())
+		return "", err
+	}
+
+	// all good, is a valid subvolume
+	log.Printf("Valid subvolume found: %s", srcSnapshot)
+
+	log.Printf("Creating snapshot in: %s", snapshot)
+
+	var stderr2 bytes.Buffer
+
+	cmd = exec.Command("btrfs", "subvolume", "snapshot", "-r", srcSnapshot, snapshot)
+	cmd.Stderr = &stderr2
+
+	if err := cmd.Start(); err != nil {
+		return "", err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		err = fmt.Errorf("Error creating snapshot: %s\nStderr: %s",
+			err, stderr2.String())
+		return "", err
+	}
+
+	log.Printf("Snapshot created: %s from %s", snapshot, srcSnapshot)
+
+	return snapshot, nil
 }

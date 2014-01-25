@@ -30,6 +30,7 @@ func realMain() int {
 	if err != nil {
 		log.SetOutput(os.Stderr)
 		log.Printf("%s", err)
+		return 1
 	}
 
 	return 0
@@ -43,6 +44,8 @@ func process() error {
 
 	// get default config values
 	backupConfig := btrfs.DefaultConfig()
+
+	backupConfig = btrfs.Config{"/home", ".snapshots"}
 
 	// TODO: parse command line args
 
@@ -65,6 +68,7 @@ func validateConfig(backupConfig btrfs.Config, driver *btrfs.Btrfs) error {
 	// create b
 
 	// check to see if subvolume exists
+	// do other sanity checks
 	err := driver.Prepare(backupConfig)
 	if err != nil {
 		return err
@@ -77,6 +81,11 @@ func validateConfig(backupConfig btrfs.Config, driver *btrfs.Btrfs) error {
 
 	for i := 0; i < len(subvols); i++ {
 		log.Printf("%s", subvols[i])
+	}
+
+	_, err2 := driver.Snapshot(backupConfig, "/")
+	if err2 != nil {
+		return err2
 	}
 
 	return nil

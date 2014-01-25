@@ -12,7 +12,7 @@ type Driver interface {
 	Subvolumes(interface{}) ([]string, error)
 
 	// Create a new filesystem snapshot, will always
-	// store the snapshot under <Subvolume>/.snapshots
-	// returns snapshot location under success, nil if not
-	Snapshot(interface{}) (string, error)
+	// store the snapshot under <Subvolume>/<SnapshotsDirectory>
+	// returns snapshot location under success, error if not
+	Snapshot(interface{}, string) (string, error)
 }

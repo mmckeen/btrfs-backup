@@ -6,11 +6,16 @@ func DefaultConfig() Config {
 }
 
 type Config struct {
-	subvolume          string
-	subvolumeDirectory string
+	SubvolumePath          string
+	SubvolumeDirectoryPath string
 }
 
 // da getter method de Subvolume
 func (c *Config) Subvolume() string {
-	return DefaultConfig().subvolume
+	return c.SubvolumePath
+}
+
+// da getter method de da subvolumeDirectory
+func (c *Config) SubvolumeDirectory() string {
+	return c.SubvolumeDirectoryPath
 }
