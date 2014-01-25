@@ -42,7 +42,7 @@ func realMain() int {
 func process() error {
 
 	// get default config values
-	backupConfig := defaultConfig()
+	backupConfig := btrfs.DefaultConfig()
 
 	// TODO: parse command line args
 
@@ -60,14 +60,26 @@ func process() error {
 }
 
 // validate the config object
-func validateConfig(backupConfig config, driver *btrfs.Btrfs) error {
+func validateConfig(backupConfig btrfs.Config, driver *btrfs.Btrfs) error {
 
 	// create b
 
 	// check to see if subvolume exists
-	err := driver.Prepare(backupConfig.Subvolume())
+	err := driver.Prepare(backupConfig)
+	if err != nil {
+		return err
+	}
 
-	return err
+	subvols, err := driver.Subvolumes(backupConfig)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < len(subvols); i++ {
+		log.Printf("%s", subvols[i])
+	}
+
+	return nil
 }
 
 // Print some basic application info
