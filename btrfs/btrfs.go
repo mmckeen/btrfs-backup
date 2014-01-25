@@ -13,7 +13,9 @@ import (
 // so that one can easily retrieve a list of subvolumes, create snapshots, and
 // do other tasks
 
-type Btrfs struct{}
+type Btrfs struct {
+	BackupConfig Config
+}
 
 func (d *Btrfs) Prepare(config Config) error {
 	// test to see if subvolume is a valid btrfs file system
@@ -144,6 +146,19 @@ func (d *Btrfs) Snapshot(config Config, srcSnapshot string) (string, error) {
 
 	if err := cmd.Wait(); err != nil {
 		err = fmt.Errorf("Error creating snapshot: %s\nStderr: %s",
+			err, stderr2.String())
+		return "", err
+	}
+
+	cmd = exec.Command("sync", snapshot_dir)
+	cmd.Stderr = &stderr2
+
+	if err := cmd.Start(); err != nil {
+		return "", err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		err = fmt.Errorf("Error running filesystem sync: %s\nStderr: %s",
 			err, stderr2.String())
 		return "", err
 	}

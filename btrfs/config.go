@@ -2,12 +2,14 @@ package btrfs
 
 func DefaultConfig() Config {
 	return Config{"/",
-		".snapshots"}
+		".snapshots",
+		false}
 }
 
 type Config struct {
 	SubvolumePath          string
 	SubvolumeDirectoryPath string
+	Server                 bool
 }
 
 // da getter method de Subvolume

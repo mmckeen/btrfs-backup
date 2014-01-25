@@ -1,10 +1,14 @@
 package main
 
 import (
+	"flag"
 	"github.com/mmckeen/btrfs-backup/btrfs"
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
+	"net/http"
+	"net/rpc"
 	"os"
 	"runtime"
 )
@@ -42,15 +46,23 @@ func realMain() int {
 // returns exit status for program
 func process() error {
 
-	// get default config values
-	backupConfig := btrfs.DefaultConfig()
+	// parse command line args
+	subvolume_source := flag.String("subvolume", btrfs.DefaultConfig().SubvolumePath, "Subvolume to back up.")
+	subvolume_destination_directory := flag.String("destination_subvolume", btrfs.DefaultConfig().SubvolumeDirectoryPath,
+		"A relative path off of the subvolume path that will come to store snapshots.")
+	server := flag.Bool("server", btrfs.DefaultConfig().Server, "Whether to enable listening as a backup server.")
 
-	backupConfig = btrfs.Config{"/home", ".snapshots"}
+	flag.Parse()
 
-	// TODO: parse command line args
+	// header info
+	info()
+
+	// set backup configuration
+	backupConfig := btrfs.Config{*subvolume_source, *subvolume_destination_directory, *server}
 
 	// create drivers
 	btrfs_driver := new(btrfs.Btrfs)
+	btrfs_driver.BackupConfig = backupConfig
 
 	// validate
 	err := validateConfig(backupConfig, btrfs_driver)
@@ -59,13 +71,24 @@ func process() error {
 		return err
 	}
 
+	// start server if asked
+	if backupConfig.Server {
+		rpc.Register(btrfs_driver)
+		rpc.HandleHTTP()
+
+		l, e := net.Listen("tcp", ":1234")
+		if e != nil {
+			log.Fatal("listen error:", e)
+		}
+		go http.Serve(l, nil)
+
+	}
+
 	return nil
 }
 
 // validate the config object
 func validateConfig(backupConfig btrfs.Config, driver *btrfs.Btrfs) error {
-
-	// create b
 
 	// check to see if subvolume exists
 	// do other sanity checks
@@ -74,13 +97,11 @@ func validateConfig(backupConfig btrfs.Config, driver *btrfs.Btrfs) error {
 		return err
 	}
 
+	// do initial testing of system by listing subvolumes
+	// and perform an initial snapshot for purposes of use later
 	subvols, err := driver.Subvolumes(backupConfig)
-	if err != nil {
+	if err != nil && subvols == nil {
 		return err
-	}
-
-	for i := 0; i < len(subvols); i++ {
-		log.Printf("%s", subvols[i])
 	}
 
 	_, err2 := driver.Snapshot(backupConfig, "/")
