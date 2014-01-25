@@ -15,4 +15,9 @@ type Driver interface {
 	// store the snapshot under <Subvolume>/<SnapshotsDirectory>
 	// returns snapshot location under success, error if not
 	Snapshot(interface{}, string) (string, error)
+
+	// Function to create a subbvolume of the specified directory
+	// Assumes that the directory doesn't already exists and does
+	// No error checking, the caller should do this.
+	CreateSubvolume(string) (string, error)
 }

@@ -93,9 +93,44 @@ func (d *Btrfs) Snapshot(config Config, srcSnapshot string) (string, error) {
 		return "", err
 	}
 
-	// all good, is a valid subvolume
 	log.Printf("Valid subvolume found: %s", srcSnapshot)
 
+	log.Printf("Making sure of the destination directory: %s", snapshot_dir)
+
+	create_destination := false
+	var stderr3 bytes.Buffer
+	cmd = exec.Command("btrfs", "subvolume", "show", snapshot_dir)
+	cmd.Stderr = &stderr3
+
+	if err := cmd.Start(); err != nil {
+		return "", err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		create_destination = true
+	}
+
+	if create_destination == true {
+
+		log.Printf("Error in verifying the destination subvolume %s, trying to create it", snapshot_dir)
+
+		new_volume, err_create := d.CreateSubvolume(snapshot_dir)
+
+		if new_volume == snapshot_dir && err_create == nil {
+			log.Printf("New subvolume created: %s", snapshot_dir)
+		} else {
+
+			err_create = fmt.Errorf("Error creating new subvolume. \nStderr: %s",
+				err_create)
+
+			return "", err_create
+		}
+
+	}
+
+	log.Printf("Valid subvolume found: %s", snapshot_dir)
+
+	// all good, is a valid subvolume source and destination
 	log.Printf("Creating snapshot in: %s", snapshot)
 
 	var stderr2 bytes.Buffer
@@ -116,4 +151,24 @@ func (d *Btrfs) Snapshot(config Config, srcSnapshot string) (string, error) {
 	log.Printf("Snapshot created: %s from %s", snapshot, srcSnapshot)
 
 	return snapshot, nil
+}
+
+func (d *Btrfs) CreateSubvolume(subvolumeDir string) (string, error) {
+
+	var stderr bytes.Buffer
+	cmd := exec.Command("btrfs", "subvolume", "create", subvolumeDir)
+	cmd.Stderr = &stderr
+
+	if err := cmd.Start(); err != nil {
+		return "", err
+	}
+
+	if err2 := cmd.Wait(); err2 != nil {
+		err2 = fmt.Errorf("Error while creating destination subvolume: %s\nStderr: %s",
+			err2, stderr.String())
+		return "", err2
+	}
+
+	return subvolumeDir, nil
+
 }
