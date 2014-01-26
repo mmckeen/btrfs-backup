@@ -4,8 +4,20 @@ type Args struct {
 	Snapshots []string
 }
 
+type Snapshot struct {
+	name string
+	port int
+}
+
 type BtrfsRPC struct {
 	Driver *Btrfs
+}
+
+func (d *BtrfsRPC) ReceiveSnapshot(args *Snapshot, reply *bool) error {
+	// a client calls this when it is about to send a snapshot over the wire,
+	// providing the destination for that snapshot as well
+
+	return nil
 }
 
 func (d *BtrfsRPC) SnapshotsNeeded(args *Args, reply *[]string) error {

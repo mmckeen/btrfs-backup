@@ -53,7 +53,6 @@ func process() error {
 	server := flag.Bool("server", btrfs.DefaultConfig().Server, "Whether to enable listening as a backup server.")
 	flag.Parse()
 
-	log.Printf("%s", *server)
 	// header info
 	info()
 
@@ -102,7 +101,10 @@ func process() error {
 		}
 
 		for i := 0; i < len(subvols); i++ {
-			log.Printf("%s\n", subvols[i])
+			// Send all missing snapshots to other server
+			// tell the other side to start receiving first
+
+			btrfs_driver.SendSubvolume(subvols[i])
 		}
 
 	}

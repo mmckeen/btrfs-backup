@@ -69,6 +69,46 @@ func (d *Btrfs) Subvolumes(config Config) ([]string, error) {
 	return subvols, nil
 }
 
+func (d *Btrfs) SendSubvolume(subvolume string) error {
+	// receive should already be started on other host, proceded with the sending!
+
+	subvolumes := strings.Split(subvolume, " ")
+
+	subvolume = subvolumes[8]
+
+	// make sure we only send back snapshots that we've made
+	if !(strings.Contains(subvolume, d.BackupConfig.SubvolumeDirectoryPath+"/") && strings.Contains(subvolume, "btrfs_backup")) {
+		return nil
+	}
+
+	// trim back even more to only include the actually snapshot name
+	subvolumes = strings.Split(subvolume, "/")
+
+	subvolume = subvolumes[1]
+
+	if subvolume == d.BackupConfig.SubvolumeDirectory() {
+		return nil
+	}
+
+	log.Printf("Sending snapshot: %s", subvolume)
+
+	var stderr bytes.Buffer
+
+	cmd := exec.Command("btrfs", "send", subvolume)
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	if err := cmd.Wait(); err != nil {
+		err = fmt.Errorf("Error sending subvolume: %s\nStderr: %s",
+			err, stderr.String())
+		return err
+	}
+
+	return nil
+}
+
 func (d *Btrfs) Snapshot(config Config, srcSnapshot string) (string, error) {
 
 	snapshot_dir := config.Subvolume() + "/" + config.SubvolumeDirectory()
