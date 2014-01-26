@@ -4,9 +4,13 @@ type Args struct {
 	Snapshots []string
 }
 
-func (d *Btrfs) SnapshotsNeeded(args *Args, reply *[]string) error {
+type BtrfsRPC struct {
+	Driver *Btrfs
+}
 
-	snapshots, err := d.Subvolumes(d.BackupConfig)
+func (d *BtrfsRPC) SnapshotsNeeded(args *Args, reply *[]string) error {
+
+	snapshots, err := d.Driver.Subvolumes(d.Driver.BackupConfig)
 
 	if err != nil {
 		*reply = make([]string, 1)

@@ -51,9 +51,9 @@ func process() error {
 	subvolume_destination_directory := flag.String("destination_subvolume", btrfs.DefaultConfig().SubvolumeDirectoryPath,
 		"A relative path off of the subvolume path that will come to store snapshots.")
 	server := flag.Bool("server", btrfs.DefaultConfig().Server, "Whether to enable listening as a backup server.")
-
 	flag.Parse()
 
+	log.Printf("%s", *server)
 	// header info
 	info()
 
@@ -72,15 +72,38 @@ func process() error {
 	}
 
 	// start server if asked
+	RPC := new(btrfs.BtrfsRPC)
+	RPC.Driver = btrfs_driver
+
 	if backupConfig.Server {
-		rpc.Register(btrfs_driver)
+		rpc.Register(RPC)
 		rpc.HandleHTTP()
 
 		l, e := net.Listen("tcp", ":1234")
 		if e != nil {
 			log.Fatal("listen error:", e)
 		}
-		go http.Serve(l, nil)
+		http.Serve(l, nil)
+
+	} else {
+		// otherwise we are a client.  Query the client for a list of snapshots to send!
+		client, err := rpc.DialHTTP("tcp", "localhost:1234")
+		if err != nil {
+			log.Fatal("dialing:", err)
+		}
+
+		// Synchronous call
+		subvols, err := btrfs_driver.Subvolumes(backupConfig)
+		args := btrfs.Args{subvols}
+		var reply []string
+		err = client.Call("BtrfsRPC.SnapshotsNeeded", args, &reply)
+		if err != nil {
+			log.Fatal("arith error:", err)
+		}
+
+		for i := 0; i < len(subvols); i++ {
+			log.Printf("%s\n", subvols[i])
+		}
 
 	}
 
