@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/mmckeen/btrfs-backup/btrfs"
 	"io"
 	"io/ioutil"
@@ -51,13 +52,18 @@ func process() error {
 	subvolume_destination_directory := flag.String("destination_subvolume", btrfs.DefaultConfig().SubvolumeDirectoryPath,
 		"A relative path off of the subvolume path that will come to store snapshots.")
 	server := flag.Bool("server", btrfs.DefaultConfig().Server, "Whether to enable listening as a backup server.")
+	destination_host := flag.String("host", btrfs.DefaultConfig().DestinationHost, "Host to send backups to.")
+	destination_port := flag.Int("port", btrfs.DefaultConfig().DestinationPort,
+		"TCP port of host to send backups to.  "+
+			"Will also be the port to listen on in server mode.")
+
 	flag.Parse()
 
 	// header info
 	info()
 
 	// set backup configuration
-	backupConfig := btrfs.Config{*subvolume_source, *subvolume_destination_directory, *server}
+	backupConfig := btrfs.Config{*subvolume_source, *subvolume_destination_directory, *server, *destination_host, *destination_port}
 
 	// create drivers
 	btrfs_driver := new(btrfs.Btrfs)
@@ -86,7 +92,7 @@ func process() error {
 
 	} else {
 		// otherwise we are a client.  Query the client for a list of snapshots to send!
-		client, err := rpc.DialHTTP("tcp", "localhost:1234")
+		client, err := rpc.DialHTTP("tcp", backupConfig.DestinationHost+":"+string(backupConfig.DestinationPort))
 		if err != nil {
 			log.Fatal("dialing:", err)
 		}
@@ -119,6 +125,13 @@ func validateConfig(backupConfig btrfs.Config, driver *btrfs.Btrfs) error {
 	// do other sanity checks
 	err := driver.Prepare(backupConfig)
 	if err != nil {
+		return err
+	}
+
+	// make sure that port number makes sense
+	err = fmt.Errorf("Invalid port number: %d", backupConfig.DestinationPort)
+
+	if backupConfig.DestinationPort > 65535 || backupConfig.DestinationPort < 1024 {
 		return err
 	}
 

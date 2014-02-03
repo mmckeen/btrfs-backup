@@ -3,21 +3,23 @@ package btrfs
 func DefaultConfig() Config {
 	return Config{"/",
 		".snapshots",
-		false}
+		false,
+		"localhost",
+		8000}
 }
 
 type Config struct {
 	SubvolumePath          string
 	SubvolumeDirectoryPath string
 	Server                 bool
+	DestinationHost        string
+	DestinationPort        int
 }
 
-// da getter method de Subvolume
 func (c *Config) Subvolume() string {
 	return c.SubvolumePath
 }
 
-// da getter method de da subvolumeDirectory
 func (c *Config) SubvolumeDirectory() string {
 	return c.SubvolumeDirectoryPath
 }
