@@ -3,6 +3,7 @@ package btrfs
 import (
 	"bytes"
 	"fmt"
+	"github.com/mmckeen/btrfs-backup/config"
 	"log"
 	"os/exec"
 	"strings"
@@ -14,10 +15,10 @@ import (
 // do other tasks
 
 type Btrfs struct {
-	BackupConfig Config
+	BackupConfig config.Config
 }
 
-func (d *Btrfs) Prepare(config Config) error {
+func (d *Btrfs) Prepare(config config.Config) error {
 	// test to see if subvolume is a valid btrfs file system
 
 	var stderr bytes.Buffer
@@ -42,7 +43,7 @@ func (d *Btrfs) Prepare(config Config) error {
 
 }
 
-func (d *Btrfs) Subvolumes(config Config) ([]string, error) {
+func (d *Btrfs) Subvolumes(config config.Config) ([]string, error) {
 
 	var stderr bytes.Buffer
 	var stdout bytes.Buffer
@@ -109,7 +110,7 @@ func (d *Btrfs) SendSubvolume(subvolume string) error {
 	return nil
 }
 
-func (d *Btrfs) Snapshot(config Config, srcSnapshot string) (string, error) {
+func (d *Btrfs) Snapshot(config config.Config, srcSnapshot string) (string, error) {
 
 	snapshot_dir := config.Subvolume() + "/" + config.SubvolumeDirectory()
 

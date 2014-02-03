@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mmckeen/btrfs-backup/btrfs"
+	"github.com/mmckeen/btrfs-backup/config"
 	"io"
 	"io/ioutil"
 	"log"
@@ -48,12 +49,12 @@ func realMain() int {
 func process() error {
 
 	// parse command line args
-	subvolume_source := flag.String("subvolume", btrfs.DefaultConfig().SubvolumePath, "Subvolume to back up.")
-	subvolume_destination_directory := flag.String("destination_subvolume", btrfs.DefaultConfig().SubvolumeDirectoryPath,
+	subvolume_source := flag.String("subvolume", config.DefaultConfig().SubvolumePath, "Subvolume to back up.")
+	subvolume_destination_directory := flag.String("destination_subvolume", config.DefaultConfig().SubvolumeDirectoryPath,
 		"A relative path off of the subvolume path that will come to store snapshots.")
-	server := flag.Bool("server", btrfs.DefaultConfig().Server, "Whether to enable listening as a backup server.")
-	destination_host := flag.String("host", btrfs.DefaultConfig().DestinationHost, "Host to send backups to.")
-	destination_port := flag.Int("port", btrfs.DefaultConfig().DestinationPort,
+	server := flag.Bool("server", config.DefaultConfig().Server, "Whether to enable listening as a backup server.")
+	destination_host := flag.String("host", config.DefaultConfig().DestinationHost, "Host to send backups to.")
+	destination_port := flag.Int("port", config.DefaultConfig().DestinationPort,
 		"TCP port of host to send backups to.  "+
 			"Will also be the port to listen on in server mode.")
 
@@ -63,7 +64,7 @@ func process() error {
 	info()
 
 	// set backup configuration
-	backupConfig := btrfs.Config{*subvolume_source, *subvolume_destination_directory, *server, *destination_host, *destination_port}
+	backupConfig := config.Config{*subvolume_source, *subvolume_destination_directory, *server, *destination_host, *destination_port}
 
 	// create drivers
 	btrfs_driver := new(btrfs.Btrfs)
@@ -119,7 +120,7 @@ func process() error {
 }
 
 // validate the config object
-func validateConfig(backupConfig btrfs.Config, driver *btrfs.Btrfs) error {
+func validateConfig(backupConfig config.Config, driver *btrfs.Btrfs) error {
 
 	// check to see if subvolume exists
 	// do other sanity checks

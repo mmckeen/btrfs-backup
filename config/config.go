@@ -1,4 +1,4 @@
-package btrfs
+package config
 
 func DefaultConfig() Config {
 	return Config{"/",
